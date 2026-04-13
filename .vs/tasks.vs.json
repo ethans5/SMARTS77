@@ -1,0 +1,16 @@
+{
+  "version": "0.2.1",
+  "tasks": [
+    {
+      "taskLabel": "Compiler APP77",
+      "appliesTo": "APP77.CPP",
+      "type": "shell",
+      "command": "cl.exe",
+      "args": [
+        "APP77.CPP",
+        "/EHsc",
+        "/Fe:APP77.exe"
+      ]
+    }
+  ]
+}
