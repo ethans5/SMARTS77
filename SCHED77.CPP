@@ -8,18 +8,23 @@
 
 #include "smarts77.h"
 
-int far roundRobin( )
-// Round Robin short-term algorithm 
+int far roundRobin()
 {
-	int count;
-	int nextTask = (SMARTS.getCurrentTask()+1)%SMARTS.getTotalTasks( );
-	for (count=0;
-	     SMARTS.getStatus(nextTask)!=READY && count<SMARTS.getTotalTasks( );
-	     count++)
-	     nextTask=++nextTask%SMARTS.getTotalTasks( );
-	if (count == SMARTS.getTotalTasks( ))	// no found READY task to run
-		nextTask = SMARTS.getTotalTasks( );
-	return nextTask;
+    int total = SMARTS.getTotalTasks();
+    if (total == 0) return 0;
+
+    int count;
+    int nextTask = (SMARTS.getCurrentTask() % total + 1) % total;
+
+    for (count = 0;
+         SMARTS.getStatus(nextTask) != READY && count < total;
+         count++)
+        nextTask = (nextTask + 1) % total;
+
+    if (count == total)
+        nextTask = total; // IDLE task
+
+    return nextTask;
 }
 int far EDF()
 // EDF (Earliest Deadline First) short-term algorithm

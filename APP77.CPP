@@ -68,7 +68,7 @@ void main( )
 	// SMARTS.declareTask(c,'C');
 	// SMARTS.runTheTasks();
     clrscr();
-    // SMARTS.externalFunctions(timerInterruptHandler, scheduler, myTaskEnd, EDF); // ✅ EDF au lieu de roundRobin
+    //  SMARTS.externalFunctions(timerInterruptHandler, scheduler, myTaskEnd, EDF); 
     SMARTS.externalFunctions(timerInterruptHandler, scheduler, myTaskEnd, roundRobin); 
 
     SMARTS.declareTask(a, 'A', 5,  3);  // cycleTime=5,  cycleCount=3

@@ -61,45 +61,47 @@ int Parallelism::declareTask(void far *code, char name,int cycleTime, int cycleC
 }
 
 void Parallelism::runTheTasks()
-		// Start running all tasks declared in SMARTS.		
 {
-	context[totalTasks].status = READY;	//for task 'runTheTasks' (IDLE task)
-	context[totalTasks].priority = MAXINT;
-	context[totalTasks].currentPriority = MAXINT;
+    context[totalTasks].status = READY; //for task 'runTheTasks' (IDLE task)
+    context[totalTasks].priority = MAXINT;
+    context[totalTasks].currentPriority = MAXINT;
+    currentTask = totalTasks;
 
-	currentTask = totalTasks;
+    asm cli;
+    userIntAddress = getvect(userInt);
+    setvect(userInt, getvect(timerInt));
+    setvect(timerInt, timerInterruptHandler);
+    asm sti;
 
-	asm	cli;		// forbids interrupts (clear interrupts) while changing the interrupt vect
-		// saves the original BIOS userInt in our variable 'userIntAddress' to be restored at the end
-	userIntAddress = getvect(userInt);	// BIOS userInt 0x60  (unused by PC)
-				// puts the normal BIOS timerInt into the unused userInt address
-	setvect(userInt,getvect(timerInt));	// timerInt 0x08 
-	
-	// sets our SMARTS external function 'timerInterruptHandler' as the new PC hard interrupt time handler
-	setvect(timerInt,timerInterruptHandler);
-	asm	sti;	// allows back interrupts (set interrupts)
+    while(true)
+    {
+        if (deadlock)
+        {
+            textcolor(RED);
+            cprintf("\n\n\rExit : deadlock");
+            break;
+        }
 
-	    // waits for end of runTheTasks (end of all the tasks)
-	while(true)
-	{
-		if (deadlock)
-		{
-			textcolor(RED);
-			cprintf("\n\n\rExit : deadlock");
-			break;
-		}
-		if (activeTasks==0)
-		{
-			cprintf("\n\n\rExit : finish");
-			break;
-		}
-	}
+        if (activeTasks == 0)
+        {
+            // Vérifier si des tâches ont encore des cycles à faire
+            int hasMoreCycles = 0;
+            for (int i = 0; i < totalTasks; i++)
+                if (context[i].cycleCount > 0 || context[i].status == READY)
+                    hasMoreCycles = 1;
 
-		// restore the original BIOS 'interrupt vector' at the end before returning to regular DOS
-	asm	cli;	// no interrupts
-	setvect(timerInt, getvect(userInt));	// restore original BIOS time handler
-	setvect(userInt, userIntAddress);	// restore original BIOS userInt
-	asm	sti;	// yes interrupts
+            if (!hasMoreCycles)
+            {
+                cprintf("\n\n\rExit : finish");
+                break;
+            }
+        }
+    }
+
+    asm cli;
+    setvect(timerInt, getvect(userInt));
+    setvect(userInt, userIntAddress);
+    asm sti;
 }
 
 void Parallelism::callScheduler( )
@@ -230,9 +232,9 @@ void Parallelism::resume(char taskName)
 
 
 void Parallelism::setCurrentNotActive()
-{	
-	context[currentTask].status = NOT_ACTIVE;
-	--activeTasks;
+{
+    context[currentTask].status = NOT_ACTIVE;
+    --activeTasks;
 }
 void Parallelism::suspended()
 {	
@@ -312,26 +314,24 @@ void Parallelism::getSchedStack(unsigned &StackSeg, unsigned &StackPtr)
 }
 
 void Parallelism::handleTimers()
-	// handling of the sleep status mode
 {
-	for (int i=totalTasks-1; i >=0 ; --i) 
-	{	
-		if(getStatus(i)==SLEEP)
-		{
-			sleepDecr(i);
-			if (getStatus(i) == READY)
-				--sleepTasks;
-		}
-	}
-	for (i=0;i<totalTasks;i++)
+    for (int i=totalTasks-1; i >=0 ; --i) 
+    {	
+        if(getStatus(i)==SLEEP)
+        {
+            sleepDecr(i);
+            if (getStatus(i) == READY)
+                --sleepTasks;
+        }
+    }
+    for (i=0;i<totalTasks;i++)
     {
         if (context[i].cycleCounter > 0)
             context[i].cycleCounter--;
 
-        if (context[i].cycleCounter == 0)
+        if (context[i].cycleCounter == 0 && context[i].cycleCount > 0)
             context[i].reDeclare();
     }
-
 }
 
 void Parallelism::taskEnd( )
@@ -362,6 +362,7 @@ Task::Task()
 	status = NOT_ACTIVE;
 	sleepCount = 0;
 	currentPriority=priority=0;
+	name = ' ';
 }
 //-----------------------------------------------------
 void Task::declare(void far *code, void far *userTaskEnd, char name, int cycleTime, int cycleCount)
@@ -372,9 +373,8 @@ void Task::declare(void far *code, void far *userTaskEnd, char name, int cycleTi
     stack[MaxStack - 2] = FP_OFF(userTaskEnd);
     stack[MaxStack - 1] = FP_SEG(userTaskEnd);
 
-    this->name = name;
-    this->cycleTime = cycleTime;
-    this->cycleCount = cycleCount;
+	this->cycleTime = cycleTime;
+    this->cycleCount = cycleCount - 1;  // -1 car le premier lancement est déjà le cycle 1
     this->cycleCounter = cycleTime;
     this->deadline = cycleTime;
     this->waitingForCycle = false;
@@ -382,29 +382,76 @@ void Task::declare(void far *code, void far *userTaskEnd, char name, int cycleTi
     taskCode = code;
     taskEnd = userTaskEnd;
 }
+
+
+// void Task::reDeclare()
+// {
+//     // 1. Vérification des erreurs de temps réel (dépassement de deadline)
+//     if (status == READY || status == RUNNING)
+//     {
+//         printf("ERREUR : tache %c encore active au debut d'un nouveau cycle!\n", name);
+//         exit(1);
+//     }
+
+//     // 2. Condition d'arrêt : Si on est au dernier cycle (1), on ne relance plus la tâche
+//     if (cycleCount <= 1)
+//     {
+//         this->cycleCounter = -1; // On met à -1 pour que handleTimers l'ignore complètement
+//         return;
+//     }
+    
+//     // 3. Sinon, on décrémente et on réinitialise les compteurs pour le nouveau cycle
+//     cycleCount--;
+//     this->cycleCounter = cycleTime;
+//     this->deadline += cycleTime;
+//     this->waitingForCycle = false;
+    
+//     // 4. Réinitialisation de la pile (Stack) de la tâche pour qu'elle reparte du début
+//     stack[MaxStack-14] = _BP;
+//     stack[MaxStack-13] = _DI;
+//     stack[MaxStack-12] = _SI;
+//     stack[MaxStack-11] = _DS;
+//     stack[MaxStack-10] = _ES;
+//     stack[MaxStack-9]  = _DX;
+//     stack[MaxStack-8]  = _CX;
+//     stack[MaxStack-7]  = _BX;
+//     stack[MaxStack-6]  = _AX;
+//     stack[MaxStack-5]  = FP_OFF(taskCode);
+//     stack[MaxStack-4]  = FP_SEG(taskCode);
+//     stack[MaxStack-3]  = _FLAGS;
+//     stack[MaxStack-2]  = FP_OFF(taskEnd);
+//     stack[MaxStack-1]  = FP_SEG(taskEnd);
+
+//     stackSeg = FP_SEG(&stack[MaxStack-14]);
+//     stackPtr = FP_OFF(&stack[MaxStack-14]);
+    
+//     // 5. On remet la tâche dans la file d'attente
+//     status = READY;
+// }
+
 void Task::reDeclare()
 {
-    // 1. Vérification des erreurs de temps réel (dépassement de deadline)
+    // 1. Vérification des erreurs de temps réel
     if (status == READY || status == RUNNING)
     {
         printf("ERREUR : tache %c encore active au debut d'un nouveau cycle!\n", name);
         exit(1);
     }
 
-    // 2. Condition d'arrêt : Si on est au dernier cycle (1), on ne relance plus la tâche
-    if (cycleCount <= 1)
+    // 2. Si c'est le dernier cycle déjà fait, on arrête complètement
+    if (cycleCount <= 0)
     {
-        this->cycleCounter = -1; // On met à -1 pour que handleTimers l'ignore complètement
+        this->cycleCounter = -1;
         return;
     }
-    
-    // 3. Sinon, on décrémente et on réinitialise les compteurs pour le nouveau cycle
+
+    // 3. Décrémenter et relancer
     cycleCount--;
     this->cycleCounter = cycleTime;
     this->deadline += cycleTime;
     this->waitingForCycle = false;
-    
-    // 4. Réinitialisation de la pile (Stack) de la tâche pour qu'elle reparte du début
+
+    // 4. Réinitialisation de la pile
     stack[MaxStack-14] = _BP;
     stack[MaxStack-13] = _DI;
     stack[MaxStack-12] = _SI;
@@ -419,12 +466,12 @@ void Task::reDeclare()
     stack[MaxStack-3]  = _FLAGS;
     stack[MaxStack-2]  = FP_OFF(taskEnd);
     stack[MaxStack-1]  = FP_SEG(taskEnd);
-
     stackSeg = FP_SEG(&stack[MaxStack-14]);
     stackPtr = FP_OFF(&stack[MaxStack-14]);
-    
-    // 5. On remet la tâche dans la file d'attente
-    status = READY;
+
+    // 5. Remettre en file d'attente
+    ++SMARTS.activeTasks;
+status = READY;
 }
 //----------------------------------------------------
 void Task::incrPriority( )
