@@ -384,18 +384,27 @@ void Task::declare(void far *code, void far *userTaskEnd, char name, int cycleTi
 }
 void Task::reDeclare()
 {
-    if (status == READY||status == RUNNING)
+    // 1. Vérification des erreurs de temps réel (dépassement de deadline)
+    if (status == READY || status == RUNNING)
     {
-        printf("ERREUR : tâche %c encore active au début d'un nouveau cycle!\n", name);
+        printf("ERREUR : tache %c encore active au debut d'un nouveau cycle!\n", name);
         exit(1);
     }
-    if (cycleCount<=0)
+
+    // 2. Condition d'arrêt : Si on est au dernier cycle (1), on ne relance plus la tâche
+    if (cycleCount <= 1)
+    {
+        this->cycleCounter = -1; // On met à -1 pour que handleTimers l'ignore complètement
         return;
+    }
     
+    // 3. Sinon, on décrémente et on réinitialise les compteurs pour le nouveau cycle
     cycleCount--;
     this->cycleCounter = cycleTime;
     this->deadline += cycleTime;
     this->waitingForCycle = false;
+    
+    // 4. Réinitialisation de la pile (Stack) de la tâche pour qu'elle reparte du début
     stack[MaxStack-14] = _BP;
     stack[MaxStack-13] = _DI;
     stack[MaxStack-12] = _SI;
@@ -413,6 +422,8 @@ void Task::reDeclare()
 
     stackSeg = FP_SEG(&stack[MaxStack-14]);
     stackPtr = FP_OFF(&stack[MaxStack-14]);
+    
+    // 5. On remet la tâche dans la file d'attente
     status = READY;
 }
 //----------------------------------------------------

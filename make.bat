@@ -1,0 +1,7 @@
+mount C C:\Users\ruben\Desktop\JCT\RealTimeSystem\SMARTS77
+C:
+
+mount D C:\Borland
+set PATH=%PATH%;D:\BIN
+
+bcc -ID:\INCLUDE -LD:\LIB APP77.CPP EVENT77.CPP EXTERN77.CPP SMARTS77.CPP SCHED77.CPP

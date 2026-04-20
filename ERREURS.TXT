@@ -1,0 +1,5 @@
+
+ *************   B Start    *********************
+ *************   C Start    *********************CCCCC
+ *************   A Start    *********************AAAAABBBBBCCCCC
+ *************   C Finish   *********************AERREUR : tache A encore active au debut d'un nouveau cycle!
