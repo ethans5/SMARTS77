@@ -367,17 +367,19 @@ Task::Task()
 //-----------------------------------------------------
 void Task::declare(void far *code, void far *userTaskEnd, char name, int cycleTime, int cycleCount)
 {
+    // Configuration initiale de la pile (Stack) pour la tache
     stack[MaxStack - 5] = FP_OFF(code);
     stack[MaxStack - 4] = FP_SEG(code);
     stack[MaxStack - 3] = _FLAGS;
     stack[MaxStack - 2] = FP_OFF(userTaskEnd);
     stack[MaxStack - 1] = FP_SEG(userTaskEnd);
 
-	this->cycleTime = cycleTime;
-    this->cycleCount = cycleCount - 1;  // -1 car le premier lancement est déjà le cycle 1
-    this->cycleCounter = cycleTime;
-    this->deadline = cycleTime;
-    this->waitingForCycle = false;
+    // Initialisation des parametres de gestion des taches periodiques (Ajout par rapport au SMARTS de base)
+	this->cycleTime = cycleTime;        // Temps entre chaque execution de la tache
+    this->cycleCount = cycleCount - 1;  // Nombre de cycles restants (-1 car le premier lancement est deja le cycle 1)
+    this->cycleCounter = cycleTime;     // Compteur decroissant pour le cycle courant
+    this->deadline = cycleTime;         // Date limite (deadline) pour l'algorithme EDF
+    this->waitingForCycle = false;      // Indique si la tache attend son prochain cycle
     status = READY;
     taskCode = code;
     taskEnd = userTaskEnd;
@@ -431,27 +433,30 @@ void Task::declare(void far *code, void far *userTaskEnd, char name, int cycleTi
 
 void Task::reDeclare()
 {
-    // 1. Vérification des erreurs de temps réel
+    // 1. Verification des erreurs de temps reel (Failure handling)
+    // On verifie si la tache a eu le temps de terminer son execution dans le cycle imparti.
+    // Si elle est encore READY ou RUNNING, cela signifie qu'elle a depasse sa deadline (Deadlock).
     if (status == READY || status == RUNNING)
     {
         printf("ERREUR : tache %c encore active au debut d'un nouveau cycle!\n", name);
         exit(1);
     }
 
-    // 2. Si c'est le dernier cycle déjà fait, on arrête complètement
+    // 2. Condition d'arret : Si c'est le dernier cycle deja fait, on arrete completement la tache
     if (cycleCount <= 0)
     {
-        this->cycleCounter = -1;
+        this->cycleCounter = -1; // On met a -1 pour que handleTimers l'ignore completement
         return;
     }
 
-    // 3. Décrémenter et relancer
+    // 3. Decrementer et relancer pour le cycle suivant
     cycleCount--;
     this->cycleCounter = cycleTime;
-    this->deadline += cycleTime;
+    this->deadline += cycleTime; // Mise a jour de la deadline pour le nouvel horizon temporel
     this->waitingForCycle = false;
 
-    // 4. Réinitialisation de la pile
+    // 4. Reinitialisation de la pile (Context Restoration)
+    // On restaure les registres et on replace le pointeur de code pour relancer la fonction depuis le debut.
     stack[MaxStack-14] = _BP;
     stack[MaxStack-13] = _DI;
     stack[MaxStack-12] = _SI;
@@ -461,17 +466,17 @@ void Task::reDeclare()
     stack[MaxStack-8]  = _CX;
     stack[MaxStack-7]  = _BX;
     stack[MaxStack-6]  = _AX;
-    stack[MaxStack-5]  = FP_OFF(taskCode);
-    stack[MaxStack-4]  = FP_SEG(taskCode);
+    stack[MaxStack-5]  = FP_OFF(taskCode); // Pointeur vers le debut de la fonction (Instruction Pointer)
+    stack[MaxStack-4]  = FP_SEG(taskCode); // Segment de code
     stack[MaxStack-3]  = _FLAGS;
-    stack[MaxStack-2]  = FP_OFF(taskEnd);
+    stack[MaxStack-2]  = FP_OFF(taskEnd);  // Pointeur vers myTaskEnd pour terminer proprement
     stack[MaxStack-1]  = FP_SEG(taskEnd);
     stackSeg = FP_SEG(&stack[MaxStack-14]);
     stackPtr = FP_OFF(&stack[MaxStack-14]);
 
-    // 5. Remettre en file d'attente
+    // 5. Remettre en file d'attente (READY) pour etre ordonnancee par le scheduler
     ++SMARTS.activeTasks;
-status = READY;
+    status = READY;
 }
 //----------------------------------------------------
 void Task::incrPriority( )

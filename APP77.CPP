@@ -68,12 +68,14 @@ void main( )
 	// SMARTS.declareTask(c,'C');
 	// SMARTS.runTheTasks();
     clrscr();
-    //  SMARTS.externalFunctions(timerInterruptHandler, scheduler, myTaskEnd, EDF); 
+    // Utilisation de l'algorithme EDF ou Round Robin (a decommenter selon le besoin)
+    // SMARTS.externalFunctions(timerInterruptHandler, scheduler, myTaskEnd, EDF); 
     SMARTS.externalFunctions(timerInterruptHandler, scheduler, myTaskEnd, roundRobin); 
 
-    SMARTS.declareTask(a, 'A', 5,  3);  // cycleTime=5,  cycleCount=3
-    SMARTS.declareTask(b, 'B', 7,  4);  // cycleTime=7,  cycleCount=4
-    SMARTS.declareTask(c, 'C', 10, 5);  // cycleTime=10, cycleCount=5
+    // Declaration des taches avec leurs parametres periodiques (fonction, nom, cycleTime, cycleCount)
+    SMARTS.declareTask(a, 'A', 5,  3);  // cycleTime=5,  cycleCount=3 (s'executera 3 fois, un cycle tous les 5 ticks)
+    SMARTS.declareTask(b, 'B', 7,  4);  // cycleTime=7,  cycleCount=4 (s'executera 4 fois, un cycle tous les 7 ticks)
+    SMARTS.declareTask(c, 'C', 10, 5);  // cycleTime=10, cycleCount=5 (s'executera 5 fois, un cycle tous les 10 ticks)
 
     SMARTS.runTheTasks();
 

@@ -27,25 +27,30 @@ int far roundRobin()
     return nextTask;
 }
 int far EDF()
-// EDF (Earliest Deadline First) short-term algorithm
+// Algorithme d'ordonnancement EDF (Earliest Deadline First)
+// Selectionne la tache dont la date limite (deadline) est la plus proche
 {
     int nextTask = -1;
     int earliestDeadline = MAXINT;
 
+    // Parcours de toutes les taches declarees pour trouver la plus urgente
     for (int i = 0; i < SMARTS.getTotalTasks(); i++)
     {
+        // On ne considere que les taches pretes a etre executees (READY)
         if (SMARTS.getStatus(i) == READY)
         {
+            // Comparaison de la deadline de la tache avec la plus petite trouvee jusqu'a present
             if (SMARTS.getDeadline(i) < earliestDeadline)
             {
                 earliestDeadline = SMARTS.getDeadline(i);
-                nextTask = i;
+                nextTask = i; // On sauvegarde l'index de la tache la plus urgente
             }
         }
     }
 
-    if (nextTask == -1)             // aucune tâche READY trouvée
-        nextTask = SMARTS.getTotalTasks();  // → IDLE task (comme dans roundRobin)
+    // Si aucune tache READY n'a ete trouvee (par exemple, elles sont toutes en attente)
+    if (nextTask == -1)
+        nextTask = SMARTS.getTotalTasks();  // -> IDLE task (comme dans roundRobin, tache fictive de repos)
 
     return nextTask;
 }

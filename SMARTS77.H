@@ -62,11 +62,11 @@ public:
 	int sleepCount;                 // the sleep remainder time
 	void far *taskCode;
     void far *taskEnd;
-    int cycleTime;
-    int cycleCount;
-    int cycleCounter;
-    int deadline;
-    int waitingForCycle;
+    int cycleTime;                  // Temps defini pour un cycle de la tache
+    int cycleCount;                 // Nombre de cycles restants a executer
+    int cycleCounter;               // Compteur ecoule pour le cycle actuel
+    int deadline;                   // Deadline absolue pour l'algorithme EDF
+    int waitingForCycle;            // Flag de synchronisation des cycles
 	Task();
 	void declare(void far *code, void far *taskEnd, char name, int cycleTime=0, int cycleCount=0);
 	void reDeclare();
