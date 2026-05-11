@@ -145,6 +145,7 @@ public:
 	void handleTimers();
 	void taskEnd();
 	int getDeadline(int taskNum);
+	void deadlineMissError(char taskName);
 
 };
 //=======================

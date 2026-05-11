@@ -234,6 +234,7 @@ void Parallelism::resume(char taskName)
 void Parallelism::setCurrentNotActive()
 {
     context[currentTask].status = NOT_ACTIVE;
+    context[currentTask].waitingForCycle = true;
     --activeTasks;
 }
 void Parallelism::suspended()
@@ -340,6 +341,17 @@ void Parallelism::taskEnd( )
 	SMARTS.setCurrentNotActive();
 	SMARTS.callScheduler();	// return the control to the scheduler to run a next task
 }
+
+void Parallelism::deadlineMissError(char taskName)
+{
+    asm cli;
+    setvect(timerInt, getvect(userInt));
+    setvect(userInt, userIntAddress);
+    asm sti;
+    cprintf("\n\rERROR: task %c still active at start of new cycle!", taskName);
+    exit(1);
+}
+
 int Parallelism::getDeadline(int taskNum)
 {
     return (taskNum < totalTasks) ? context[taskNum].deadline : MAXINT;
@@ -386,61 +398,12 @@ void Task::declare(void far *code, void far *userTaskEnd, char name, int cycleTi
 }
 
 
-// void Task::reDeclare()
-// {
-//     // 1. Vérification des erreurs de temps réel (dépassement de deadline)
-//     if (status == READY || status == RUNNING)
-//     {
-//         printf("ERREUR : tache %c encore active au debut d'un nouveau cycle!\n", name);
-//         exit(1);
-//     }
-
-//     // 2. Condition d'arrêt : Si on est au dernier cycle (1), on ne relance plus la tâche
-//     if (cycleCount <= 1)
-//     {
-//         this->cycleCounter = -1; // On met à -1 pour que handleTimers l'ignore complètement
-//         return;
-//     }
-    
-//     // 3. Sinon, on décrémente et on réinitialise les compteurs pour le nouveau cycle
-//     cycleCount--;
-//     this->cycleCounter = cycleTime;
-//     this->deadline += cycleTime;
-//     this->waitingForCycle = false;
-    
-//     // 4. Réinitialisation de la pile (Stack) de la tâche pour qu'elle reparte du début
-//     stack[MaxStack-14] = _BP;
-//     stack[MaxStack-13] = _DI;
-//     stack[MaxStack-12] = _SI;
-//     stack[MaxStack-11] = _DS;
-//     stack[MaxStack-10] = _ES;
-//     stack[MaxStack-9]  = _DX;
-//     stack[MaxStack-8]  = _CX;
-//     stack[MaxStack-7]  = _BX;
-//     stack[MaxStack-6]  = _AX;
-//     stack[MaxStack-5]  = FP_OFF(taskCode);
-//     stack[MaxStack-4]  = FP_SEG(taskCode);
-//     stack[MaxStack-3]  = _FLAGS;
-//     stack[MaxStack-2]  = FP_OFF(taskEnd);
-//     stack[MaxStack-1]  = FP_SEG(taskEnd);
-
-//     stackSeg = FP_SEG(&stack[MaxStack-14]);
-//     stackPtr = FP_OFF(&stack[MaxStack-14]);
-    
-//     // 5. On remet la tâche dans la file d'attente
-//     status = READY;
-// }
 
 void Task::reDeclare()
 {
-    // 1. Verification des erreurs de temps reel (Failure handling)
-    // On verifie si la tache a eu le temps de terminer son execution dans le cycle imparti.
-    // Si elle est encore READY ou RUNNING, cela signifie qu'elle a depasse sa deadline (Deadlock).
-    if (status == READY || status == RUNNING)
-    {
-        printf("ERREUR : tache %c encore active au debut d'un nouveau cycle!\n", name);
-        exit(1);
-    }
+    // 1. task must have explicitly confirmed it finished before a new cycle starts
+    if (!waitingForCycle)
+        SMARTS.deadlineMissError(name);
 
     // 2. Condition d'arret : Si c'est le dernier cycle deja fait, on arrete completement la tache
     if (cycleCount <= 0)

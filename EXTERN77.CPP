@@ -43,12 +43,13 @@ void far interrupt timerInterruptHandler(...)
 		asm	mov	sp,StackPtrAct
 	}
 			// else if 'context switch' flag=false set 'end of time slice' flag
-//	else 
-//	{
-//		SMARTS.setEndOfTimeSlice();
-//		++SMARTS.TScount;	// increment Time Share count
-//	}
+	else 
+	{
+		SMARTS.setEndOfTimeSlice();
+		++SMARTS.TScount;	// increment Time Share count
+	}
 }
+
 /**********    EXTERNAL FUNCTION     **********/
 void scheduler( )	// this also a parallel task
 		// This function is called by hardware called 'timerInterruptHandler' function
