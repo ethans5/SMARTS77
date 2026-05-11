@@ -401,9 +401,20 @@ void Task::declare(void far *code, void far *userTaskEnd, char name, int cycleTi
 
 void Task::reDeclare()
 {
+<<<<<<< HEAD
     // 1. task must have explicitly confirmed it finished before a new cycle starts
     if (!waitingForCycle)
         SMARTS.deadlineMissError(name);
+=======
+    // 1. Verification des erreurs de temps reel (Failure handling)
+    // On verifie si la tache a eu le temps de terminer son execution dans le cycle imparti.
+    // Si elle est encore READY ou RUNNING, cela signifie qu'elle a depasse sa deadline (Deadlock).
+    if (status == READY || status == RUNNING)
+    {
+        printf("ERREUR : tache %c encore active au debut d'un nouveau cycle!\n", name);
+        exit(1);
+    }
+>>>>>>> c2a3e92a83cad550e74ca07e3f4ce75e4b310b22
 
     // 2. Condition d'arret : Si c'est le dernier cycle deja fait, on arrete completement la tache
     if (cycleCount <= 0)
