@@ -87,7 +87,7 @@ void Parallelism::runTheTasks()
             // Vérifier si des tâches ont encore des cycles à faire
             int hasMoreCycles = 0;
             for (int i = 0; i < totalTasks; i++)
-                if (context[i].cycleCount > 0 || context[i].status == READY)
+                if (context[i].cycleCounter != -1)
                     hasMoreCycles = 1;
 
             if (!hasMoreCycles)
@@ -330,7 +330,7 @@ void Parallelism::handleTimers()
         if (context[i].cycleCounter > 0)
             context[i].cycleCounter--;
 
-        if (context[i].cycleCounter == 0 && context[i].cycleCount > 0)
+        if (context[i].cycleCounter == 0 && context[i].cycleCount >= 0)
             context[i].reDeclare();
     }
 }
