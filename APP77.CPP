@@ -13,7 +13,7 @@ void a( )
 	SMARTS.contextSwitchOff();
 	cout << "\n *************   A Start    *********************";
 	SMARTS.contextSwitchOn();
-	for (int j=0; j <30; j++)
+	for (int j=0; j <10; j++)
 	{
 		for (int i=0; i <10000; i++);
 		SMARTS.contextSwitchOff();
@@ -30,7 +30,7 @@ void b( )
 	SMARTS.contextSwitchOff();
 	cout << "\n *************   B Start    *********************";
 	SMARTS.contextSwitchOn();
-	for (int j=0; j <35; j++)
+	for (int j=0; j <18; j++)
 	{
 		for (int i=0; i <10000; i++);
 		SMARTS.contextSwitchOff();
@@ -47,7 +47,7 @@ void c( )
 	SMARTS.contextSwitchOff();
 	cout << "\n *************   C Start    *********************";
 	SMARTS.contextSwitchOn();
-	for (int j=0; j <10; j++)
+	for (int j=0; j <5; j++)
 	{
 		for (int i=0; i <10000; i++);
 		SMARTS.contextSwitchOff();
@@ -69,8 +69,8 @@ void main( )
 	// SMARTS.runTheTasks();
     clrscr();
     // Utilisation de l'algorithme EDF ou Round Robin (a decommenter selon le besoin)
-   SMARTS.externalFunctions(timerInterruptHandler, scheduler, myTaskEnd, EDF); 
-   //SMARTS.externalFunctions(timerInterruptHandler, scheduler, myTaskEnd, roundRobin); 
+   //SMARTS.externalFunctions(timerInterruptHandler, scheduler, myTaskEnd, EDF); 
+   SMARTS.externalFunctions(timerInterruptHandler, scheduler, myTaskEnd, roundRobin); 
 
     // Declaration des taches avec leurs parametres periodiques (fonction, nom, cycleTime, cycleCount)
     SMARTS.declareTask(a, 'A', 5,  3);  // cycleTime=5,  cycleCount=3 (s'executera 3 fois, un cycle tous les 5 ticks)
@@ -82,4 +82,6 @@ void main( )
 }
 
 
-
+/* The values A=5, B=7, C=10 work for both EDF and RR; *
+ * A=10, B=18, C=5 works only for EDF;  			   *	
+ * A=30, B=35, C=10 works for neither algorithm.       */
