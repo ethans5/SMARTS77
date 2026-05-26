@@ -349,7 +349,6 @@ void Parallelism::deadlineMissError(char taskName)
     setvect(userInt, userIntAddress);
     asm sti;
     cprintf("\n\rERROR: task %c still active at start of new cycle!", taskName);
-    exit(1);
 }
 
 int Parallelism::getDeadline(int taskNum)
@@ -402,8 +401,9 @@ void Task::declare(void far *code, void far *userTaskEnd, char name, int cycleTi
 void Task::reDeclare()
 {
     // 1. task must have explicitly confirmed it finished before a new cycle starts
-    if (!waitingForCycle)
+    if (!waitingForCycle){
         SMARTS.deadlineMissError(name);
+		missedDeadLine = 1;}
 
     // 2. Condition d'arret : Si c'est le dernier cycle deja fait, on arrete completement la tache
     if (cycleCount <= 0)
@@ -438,8 +438,13 @@ void Task::reDeclare()
     stackPtr = FP_OFF(&stack[MaxStack-14]);
 
     // 5. Remettre en file d'attente (READY) pour etre ordonnancee par le scheduler
-    ++SMARTS.activeTasks;
+   if (!missedDeadLine)
+   {
+	++SMARTS.activeTasks;
+   }
+   
     status = READY;
+
 }
 //----------------------------------------------------
 void Task::incrPriority( )

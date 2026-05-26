@@ -66,13 +66,15 @@ public:
     int cycleCount;                 // Nombre de cycles restants a executer
     int cycleCounter;               // Compteur ecoule pour le cycle actuel
     int deadline;                   // Deadline absolue pour l'algorithme EDF
-    int waitingForCycle;            // Flag de synchronisation des cycles
+    int waitingForCycle;  
+	int missedDeadLine;          // Flag de synchronisation des cycles
 	Task();
 	void declare(void far *code, void far *taskEnd, char name, int cycleTime=0, int cycleCount=0);
 	void reDeclare();
 	void sleepDecr();
 	void incrPriority();
 	void setOriginalPriority();
+
 
 };
 //                           Main class
