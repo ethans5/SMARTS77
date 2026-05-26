@@ -13,7 +13,7 @@ void a( )
 	SMARTS.contextSwitchOff();
 	cout << "\n *************   A Start    *********************";
 	SMARTS.contextSwitchOn();
-	for (int j=0; j <10; j++)
+	for (int j=0; j <500; j++)
 	{
 		for (int i=0; i <10000; i++);
 		SMARTS.contextSwitchOff();
@@ -30,7 +30,7 @@ void b( )
 	SMARTS.contextSwitchOff();
 	cout << "\n *************   B Start    *********************";
 	SMARTS.contextSwitchOn();
-	for (int j=0; j <18; j++)
+	for (int j=0; j <500; j++)
 	{
 		for (int i=0; i <10000; i++);
 		SMARTS.contextSwitchOff();
@@ -47,7 +47,7 @@ void c( )
 	SMARTS.contextSwitchOff();
 	cout << "\n *************   C Start    *********************";
 	SMARTS.contextSwitchOn();
-	for (int j=0; j <5; j++)
+	for (int j=0; j <500; j++)
 	{
 		for (int i=0; i <10000; i++);
 		SMARTS.contextSwitchOff();
@@ -82,6 +82,10 @@ void main( )
 }
 
 
-/* The values A=5, B=7, C=10 work for both EDF and RR; *
+/* name : BENSIMON RUBEN 							   *
+ * ID : 17135925									   *
+ * NAME : SARFATI ETHAN 							   *
+ * ID : 345682546									   *	
+ * The values A=5, B=7, C=10 work for both EDF and RR; *
  * A=10, B=18, C=5 works only for EDF;  			   *	
- * A=30, B=35, C=10 works for neither algorithm.       */
+ * A=30, B=35, C=10 / A= 500, B=500, C=500 work for neither algorithm.       */
