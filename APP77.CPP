@@ -88,4 +88,4 @@ void main( )
  * ID : 345682546									   *	
  * The values A=5, B=7, C=10 work for both EDF and RR; *
  * A=10, B=18, C=5 works only for EDF;  			   *	
- * A=30, B=35, C=10 / A= 500, B=500, C=500 work for neither algorithm.       */
+ * A= 500, B=500, C=500 work for neither algorithm.       */
